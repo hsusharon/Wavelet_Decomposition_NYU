@@ -234,7 +234,7 @@ def getTrainingTestingData(batch_size, num_workers=8, is_224=False):
     transformed_testing = depthDatasetMemory(data, nyu2_train, transform=getNoTransform(is_224=is_224))
     training_data = []
     testing_data = []
-    for i in range(1):
+    for i in range(10):
         training_data.append(transformed_training.unzip_data(i))
         testing_data.append(transformed_testing.unzip_data(i+3000))
         if i%150 == 0:
