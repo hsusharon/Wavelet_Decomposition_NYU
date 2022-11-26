@@ -354,3 +354,5 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+    ## python train.py --encoder_type densenet --logdir log --model_name WaveletMDP --bs 8 --num_workers 8 --output_scales 0 1 2 3 --loss_scales 0 1 2 3 --normalize_input
