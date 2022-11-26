@@ -13,7 +13,7 @@ import os
 import scipy.io as io
 import h5py
 from imageio import imread
-
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 # Argument Parser
 parser = argparse.ArgumentParser(description='Single Image Depth Prediction with Wavelet Decomposition')

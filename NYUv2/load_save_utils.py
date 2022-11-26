@@ -7,6 +7,7 @@
 import os
 import torch
 import json
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 def save_model(model, log_path, epoch):
     """Save model weights to disk

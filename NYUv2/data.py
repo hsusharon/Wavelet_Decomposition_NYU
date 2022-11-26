@@ -73,15 +73,17 @@ def loadZipToMem(zip_file):
     print('Loading dataset zip file...', end='')
     from zipfile import ZipFile
     input_zip = ZipFile(zip_file)
-    data = {name: input_zip.read(name) for name in input_zip.namelist()}
-    nyu2_train = list((row.split(',') for row in (data['data/nyu2_train.csv']).decode("utf-8").split('\n') if len(row) > 0))
-
+    # for name in input_zip.namelist():
+    #     print("File name:", name)
+    data = {name: input_zip.read(name) for name in input_zip.namelist()}  ## the image matrix not yet extracted
+    nyu2_train = list((row.split(',') for row in (data['data/nyu2_train.csv']).decode("utf-8").split('\n') if len(row) > 0))   
     from sklearn.utils import shuffle
     nyu2_train = shuffle(nyu2_train, random_state=0)
 
     #if True: nyu2_train = nyu2_train[:40]
-
-    print('Loaded ({0}).'.format(len(nyu2_train)))
+    print('Loaded training datasize of {0}.'.format(len(nyu2_train)))
+    # tempkeys = data.keys()
+    # print("size of data:", len(data), type(data.keys))
     return data, nyu2_train
 
 def extract_zip(input_zip):
@@ -93,11 +95,21 @@ class depthDatasetMemory(Dataset):
         self.data, self.nyu_dataset = data, nyu2_train
         self.transform = transform
 
-    def __getitem__(self, idx):
+    # def __getitem__(self, idx):
+    #     sample = self.nyu_dataset[idx]
+    #     image = Image.open( BytesIO(self.data[sample[0]]) )
+    #     depth = Image.open( BytesIO(self.data[sample[1]]) )
+    #     sample = {'image': image, 'depth': depth}
+    #     print("image size:", len(image), "depth size:", len(depth))
+    #     if self.transform: sample = self.transform(sample)
+    #     return sample
+
+    def unzip_data(self, idx):
         sample = self.nyu_dataset[idx]
         image = Image.open( BytesIO(self.data[sample[0]]) )
         depth = Image.open( BytesIO(self.data[sample[1]]) )
         sample = {'image': image, 'depth': depth}
+        # print("image size:", image, "depth size:",depth)
         if self.transform: sample = self.transform(sample)
         return sample
 
@@ -215,9 +227,27 @@ def getDefaultTrainTransform(is_224=False):
 
 def getTrainingTestingData(batch_size, num_workers=8, is_224=False):
     data, nyu2_train = loadZipToMem('nyu_data.zip')
+    ## data is the loaded images not yet unzipped, nyu2_train is the list of filenames for training dataset
+    print("Loaded zip file")
 
     transformed_training = depthDatasetMemory(data, nyu2_train, transform=getDefaultTrainTransform(is_224=is_224))
     transformed_testing = depthDatasetMemory(data, nyu2_train, transform=getNoTransform(is_224=is_224))
+    training_data = []
+    testing_data = []
+    for i in range(1):
+        training_data.append(transformed_training.unzip_data(i))
+        testing_data.append(transformed_testing.unzip_data(i+3000))
+        if i%150 == 0:
+            print("Processing until image:", i)
+    del transformed_testing
+    del transformed_training
+    train_dataloader = DataLoader(training_data, batch_size, shuffle=True, num_workers=num_workers)
+    test_dataloader = DataLoader(testing_data, batch_size, shuffle=False, num_workers=num_workers)
+    
+    
+    return train_dataloader, test_dataloader
 
-    return DataLoader(transformed_training, batch_size, shuffle=True, num_workers=num_workers), \
-           DataLoader(transformed_testing, batch_size, shuffle=False, num_workers=num_workers)
+
+# def getTrainingTestData_unzip(batchsize, num_workers=8, is_224 = False):
+#     file_path = 
+           

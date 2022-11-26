@@ -10,7 +10,7 @@ import datetime
 
 import torch.nn as nn
 import torch.nn.functional as F
-from tensorboardX import SummaryWriter
+from torch.utils.tensorboard import SummaryWriter
 
 from model import Model
 from data import getTrainingTestingData
@@ -23,6 +23,7 @@ from pytorch_wavelets import DWT
 import os
 import sys
 import shutil
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 def normalize_image(x):
     """Rescale image pixels to span range [0, 1]
@@ -57,8 +58,8 @@ def val(model, val_iter, val_loader, dwt, l1_criterion, all_writers, niter, args
 
     with torch.no_grad():
         inputs = {}
-        image = torch.autograd.Variable(sample_batched['image'].cuda())
-        depth = torch.autograd.Variable(sample_batched['depth'].cuda(non_blocking=True))
+        image = torch.autograd.Variable(sample_batched['image']).cuda()
+        depth = torch.autograd.Variable(sample_batched['depth']).cuda(non_blocking=True)
         if args.disparity:
             depth_n = DepthNorm(depth)
         else:
@@ -223,13 +224,13 @@ def main():
     save_opts(logpath, args)
     with open(os.path.join(logpath, 'commandline_args.txt'), 'w') as f:
         f.write('\n '.join(sys.argv[1:]))
-
+    print(args.no_pretrained)
     # Create model
     if args.no_pretrained:
         args.pretrained_encoder = False
     else:
         args.pretrained_encoder = True
-
+    print(args.pretrained_encoder)
     print("Creating model...", end="")
     model = Model(args).cuda()
     print(' ...Model created.')
@@ -246,11 +247,14 @@ def main():
     train_loader, test_loader = getTrainingTestingData(batch_size=batch_size, num_workers=args.num_workers,
                                                        is_224=args.use_224)
     test_iter = iter(test_loader)
+    print("Successfully Loaded Training/Test data with size:", len(train_loader), len(test_loader), test_iter)
+    
+    
 
     writers = {}
     for mode in ["train", "val"]:
         writers[mode] = SummaryWriter(os.path.join(logpath, mode))
-
+    print("With", mode, "summary write write")
     # Loss
     l1_criterion = nn.L1Loss()
 
@@ -259,23 +263,24 @@ def main():
 
     # Start training...
     for epoch in range(args.epochs):
+        print("Running epoch:", epoch)
         batch_time = AverageMeter()
         # losses = AverageMeter()
+
         losses = {}
         N = len(train_loader)
-
         # Switch to train mode
         model.train()
-
         end = time.time()
-
+        print(train_loader)
         for i, sample_batched in enumerate(train_loader):
+            print("Running i=",i)
             optimizer.zero_grad()
-
             # Prepare sample and target
-            image = torch.autograd.Variable(sample_batched['image'].cuda())
-            depth = torch.autograd.Variable(sample_batched['depth'].cuda(non_blocking=True))
+            image = torch.autograd.Variable(sample_batched['image']).cuda()
+            depth = torch.autograd.Variable(sample_batched['depth']).cuda(non_blocking=True)
 
+            print("image and depth done")
             # Normalize depth
             if args.disparity:
                 depth_n = DepthNorm( depth )
@@ -283,16 +288,15 @@ def main():
                 depth_n = depth
             inputs = {"disp_gt": depth_n}
             inputs["image"] = image.detach().cpu()
-
             pad_lowestscale = nn.Identity()
             if args.use_wavelets:
                 yl_gt, yh_gt = forward_dwt(depth_n)
                 inputs[("wavelets", 3, "LL")] = pad_lowestscale(yl_gt)
-
+            print("if use wavelet", args.use_wavelets)
             # Predict
             outputs = model(image)
-
             # Compute the loss
+            print(outputs)
             total_loss = 0
 
             for scale in range(4):

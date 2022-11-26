@@ -19,7 +19,7 @@ import pickle as pkl
 import scipy.io as io
 from scipy import ndimage
 import os
-
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 def DepthNorm(depth, maxDepth=1000.0/100.0):
     return maxDepth / depth

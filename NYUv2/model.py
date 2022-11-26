@@ -8,6 +8,8 @@ import torch.nn as nn
 
 from networks.encoders import ResnetEncoder, DenseEncoder, MobileNetV2Encoder
 from networks.decoders import DecoderWave, DecoderWave224, Decoder, Decoder224, SparseDecoderWave
+import os
+os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 class Model(nn.Module):
     def __init__(self, opts):
