@@ -13,7 +13,7 @@ import torch.nn.functional as F
 from torch.utils.tensorboard import SummaryWriter
 
 from model import Model
-from data import getTrainingTestingData
+from data import getTrainingTestingData, getTrainingTestData_unzip
 from utils import AverageMeter, DepthNorm
 
 from load_save_utils import *
@@ -243,17 +243,18 @@ def main():
     prefix = 'densenet_' + str(batch_size)
 
     # Load data
-    train_loader, test_loader = getTrainingTestingData(batch_size=batch_size, num_workers=args.num_workers,
-                                                       is_224=args.use_224)
+    # train_loader, test_loader = getTrainingTestingData(batch_size=batch_size, num_workers=args.num_workers,
+    #                                                    is_224=args.use_224)
+    # test_iter = iter(test_loader)
+    # print(test_iter)
+    print("If dataset need transform:", args.use_224)
+    train_loader, test_loader = getTrainingTestData_unzip(batch_size=batch_size, num_workers=args.num_workers,
+                                                            is_224=args.use_224)
     test_iter = iter(test_loader)
-    print(test_iter)
     
-    
-
     writers = {}
     for mode in ["train", "val"]:
         writers[mode] = SummaryWriter(os.path.join(logpath, mode))
-    print("With", mode, "summary write write")
     # Loss
     l1_criterion = nn.L1Loss()
 
@@ -271,7 +272,6 @@ def main():
         # Switch to train mode
         model.train()
         end = time.time()
-        print(train_loader)
         for i, sample_batched in enumerate(train_loader):
             optimizer.zero_grad()
             # Prepare sample and target

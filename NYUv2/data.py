@@ -12,6 +12,7 @@ from torchvision.transforms import functional as TF
 from PIL import Image
 from io import BytesIO
 import random
+import csv
 
 def _is_pil_image(img):
     return isinstance(img, Image.Image)
@@ -234,7 +235,7 @@ def getTrainingTestingData(batch_size, num_workers=8, is_224=False):
     transformed_testing = depthDatasetMemory(data, nyu2_train, transform=getNoTransform(is_224=is_224))
     training_data = []
     testing_data = []
-    for i in range(10): #2
+    for i in range(1): #2
         training_data.append(transformed_training.unzip_data(i))
         testing_data.append(transformed_testing.unzip_data(i+3000))
         if i%150 == 0:
@@ -248,7 +249,46 @@ def getTrainingTestingData(batch_size, num_workers=8, is_224=False):
     
     return train_dataloader, test_dataloader
 
-## code the reading data section again without using read zip
-# def getTrainingTestData_unzip(batchsize, num_workers=8, is_224 = False):
-#     file_path = 
-           
+# reading data directly from file not with zip file
+def getTrainingTestData_unzip(batch_size, num_workers=8, is_224 = False):
+    print("Loading dataset ... ")
+    ## load training dataset
+    train_folder = "./data/data/nyu2_train.csv"
+    training_list = []
+    with open(train_folder) as file_obj:  ## read the train data list
+        train_files = csv.reader(file_obj)
+        for row in train_files:
+            temp = []
+            temp.append('./data/' + row[0])
+            temp.append('./data/' + row[1])
+            training_list.append(temp)
+    training_dataset = []
+    transform=getDefaultTrainTransform(is_224=is_224)
+    for filename in training_list[0:2000]:  ## read the image for the training dataset
+        image = Image.open(filename[0])
+        depth = Image.open(filename[1])
+        sample = {'image': image, 'depth': depth}  ## save the corres image and depth into a dict
+        if transform: sample = transform(sample)
+        training_dataset.append(sample)
+    ## load testing dataset
+    test_folder = "./data/data/nyu2_test.csv"
+    testing_list = []
+    with open(test_folder) as file_obj:  ## read the test data list
+        train_files = csv.reader(file_obj)
+        for row in train_files:
+            temp = []
+            temp.append('./data/' + row[0])
+            temp.append('./data/' + row[1])
+            testing_list.append(temp)
+    testing_dataset = []
+    transform=getNoTransform(is_224=is_224)
+    for filename in testing_list[0:200]:  ## read the image for the training dataset
+        image = Image.open(filename[0])
+        depth = Image.open(filename[1])
+        sample = {'image': image, 'depth': depth}  ## samve the cor image and depth into a dict
+        if transform: sample = transform(sample)
+        testing_dataset.append(sample)
+    print("Loaded training_datasize:", len(training_dataset), "testing_datasize:", len(testing_dataset))
+    train_loader = DataLoader(training_dataset, batch_size, shuffle=True, num_workers=num_workers)
+    test_loader = DataLoader(testing_dataset, batch_size, shuffle=False, num_workers=num_workers)
+    return train_loader, test_loader
