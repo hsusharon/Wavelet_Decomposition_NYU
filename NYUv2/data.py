@@ -228,26 +228,28 @@ def getDefaultTrainTransform(is_224=False):
 def getTrainingTestingData(batch_size, num_workers=8, is_224=False):
     data, nyu2_train = loadZipToMem('nyu_data.zip')
     ## data is the loaded images not yet unzipped, nyu2_train is the list of filenames for training dataset
-    print("Loaded zip file")
+    print("Done loading zip file")
 
     transformed_training = depthDatasetMemory(data, nyu2_train, transform=getDefaultTrainTransform(is_224=is_224))
     transformed_testing = depthDatasetMemory(data, nyu2_train, transform=getNoTransform(is_224=is_224))
     training_data = []
     testing_data = []
-    for i in range(10):
-        training_data.append(transformed_training.unzip_data(i))
+    for i in range(2):
+        if i == 0:
+            training_data.append(transformed_training.unzip_data(i))
         testing_data.append(transformed_testing.unzip_data(i+3000))
         if i%150 == 0:
             print("Processing until image:", i)
-    del transformed_testing
-    del transformed_training
+    # del transformed_testing
+    # del transformed_training
+    print("Training data size:", len(training_data), len(testing_data))
     train_dataloader = DataLoader(training_data, batch_size, shuffle=True, num_workers=num_workers)
     test_dataloader = DataLoader(testing_data, batch_size, shuffle=False, num_workers=num_workers)
     
     
     return train_dataloader, test_dataloader
 
-
+## code the reading data section again without using read zip
 # def getTrainingTestData_unzip(batchsize, num_workers=8, is_224 = False):
 #     file_path = 
            

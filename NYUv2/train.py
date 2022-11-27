@@ -50,11 +50,12 @@ def val(model, val_iter, val_loader, dwt, l1_criterion, all_writers, niter, args
     """Validate the model on a single minibatch
     """
     set_eval(model)
+    print(val_iter)
     try:
-        sample_batched = val_iter.next()
+        sample_batched = next(val_iter) ##val_iter.next()
     except StopIteration:
         val_iter = iter(val_loader)
-        sample_batched = val_iter.next()
+        sample_batched = next(val_iter)##val_iter.next()
 
     with torch.no_grad():
         inputs = {}
@@ -104,11 +105,11 @@ def val(model, val_iter, val_loader, dwt, l1_criterion, all_writers, niter, args
                 pass
         losses["loss"] = total_loss
 
-        log("val", inputs, outputs, losses, all_writers, niter, args)
+        # log("val", inputs, outputs, losses, all_writers, niter, args)
         del inputs, outputs, losses
 
     set_train(model)
-    return val_iter
+    return val_iter, total_loss
 
 
 def log(mode, inputs, outputs, losses, all_writers, niter, args):
@@ -224,13 +225,11 @@ def main():
     save_opts(logpath, args)
     with open(os.path.join(logpath, 'commandline_args.txt'), 'w') as f:
         f.write('\n '.join(sys.argv[1:]))
-    print(args.no_pretrained)
     # Create model
     if args.no_pretrained:
         args.pretrained_encoder = False
     else:
         args.pretrained_encoder = True
-    print(args.pretrained_encoder)
     print("Creating model...", end="")
     model = Model(args).cuda()
     print(' ...Model created.')
@@ -247,7 +246,7 @@ def main():
     train_loader, test_loader = getTrainingTestingData(batch_size=batch_size, num_workers=args.num_workers,
                                                        is_224=args.use_224)
     test_iter = iter(test_loader)
-    print("Successfully Loaded Training/Test data with size:", len(train_loader), len(test_loader), test_iter)
+    print(test_iter)
     
     
 
@@ -274,13 +273,11 @@ def main():
         end = time.time()
         print(train_loader)
         for i, sample_batched in enumerate(train_loader):
-            print("Running i=",i)
             optimizer.zero_grad()
             # Prepare sample and target
             image = torch.autograd.Variable(sample_batched['image']).cuda()
             depth = torch.autograd.Variable(sample_batched['depth']).cuda(non_blocking=True)
 
-            print("image and depth done")
             # Normalize depth
             if args.disparity:
                 depth_n = DepthNorm( depth )
@@ -292,11 +289,10 @@ def main():
             if args.use_wavelets:
                 yl_gt, yh_gt = forward_dwt(depth_n)
                 inputs[("wavelets", 3, "LL")] = pad_lowestscale(yl_gt)
-            print("if use wavelet", args.use_wavelets)
+
             # Predict
             outputs = model(image)
             # Compute the loss
-            print(outputs)
             total_loss = 0
 
             for scale in range(4):
@@ -345,8 +341,8 @@ def main():
 
             if i % 300 == 0:
                 # Log to tensorboard
-                log("train", inputs, outputs, losses, writers, niter, args)
-                test_iter = val(model, test_iter, test_loader, forward_dwt, l1_criterion, writers, niter, args, l1_criterion)
+                # log("train", inputs, outputs, losses, writers, niter, args)
+                test_iter,_ = val(model, test_iter, test_loader, forward_dwt, l1_criterion, writers, niter, args, l1_criterion)
 
         # save epoch
         save_model(model, logpath, epoch)
@@ -355,4 +351,4 @@ def main():
 if __name__ == '__main__':
     main()
 
-    ## python train.py --encoder_type densenet --logdir log --model_name WaveletMDP --bs 8 --num_workers 8 --output_scales 0 1 2 3 --loss_scales 0 1 2 3 --normalize_input
+    ## python train.py --encoder_type densenet --logdir log --model_name WaveletMDP --bs 8 --num_workers 8 --output_scales 0 1 2 3 --loss_scales 0 1 2 3 --normalize_input --use_wavelets

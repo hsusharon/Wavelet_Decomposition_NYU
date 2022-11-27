@@ -19,7 +19,7 @@ class Model(nn.Module):
 
         decoder_width = 0.5
         if opts.encoder_type == "densenet":
-            self.encoder = DenseEncoder(normalize_input=opts.normalize_input, pretrained=opts.pretrained_encoder)
+            self.encoder = DenseEncoder(normalize_input=opts.normalize_input, pretrained=opts.pretrained_encoder)  
         elif opts.encoder_type == "resnet":
             self.encoder = ResnetEncoder(num_layers=opts.num_layers, pretrained=opts.pretrained_encoder,
                                          normalize_input=opts.normalize_input)
