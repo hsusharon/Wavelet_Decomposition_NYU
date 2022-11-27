@@ -247,6 +247,8 @@ def main():
     #                                                    is_224=args.use_224)
     # test_iter = iter(test_loader)
     # print(test_iter)
+
+    # Load data folder not the zip file
     print("If dataset need transform:", args.use_224)
     train_loader, test_loader = getTrainingTestData_unzip(batch_size=batch_size, num_workers=args.num_workers,
                                                             is_224=args.use_224)
