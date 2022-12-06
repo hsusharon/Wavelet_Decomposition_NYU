@@ -10,7 +10,7 @@ import datetime
 
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.utils.tensorboard import SummaryWriter
+# from torch.utils.tensorboard import SummaryWriter
 
 from model import Model
 from data import getTrainingTestingData, getTrainingTestData_unzip
@@ -23,7 +23,7 @@ from pytorch_wavelets import DWT
 import os
 import sys
 import shutil
-os.environ['KMP_DUPLICATE_LIB_OK']='True'
+os.environ['KMP_DUPLICATE_LIB_OK'] = 'True'
 
 def normalize_image(x):
     """Rescale image pixels to span range [0, 1]
@@ -167,7 +167,7 @@ def log(mode, inputs, outputs, losses, all_writers, niter, args):
 def main():
     # Arguments
     parser = argparse.ArgumentParser(description='Single Image Depth Prediction with Wavelet Decomposition')
-    parser.add_argument('--epochs', default=20, type=int, help='number of total epochs to run')
+    parser.add_argument('--epochs', default=3, type=int, help='number of total epochs to run')
     parser.add_argument('--lr', '--learning-rate', default=0.0001, type=float, help='initial learning rate')
     parser.add_argument('--logdir', type=str, default='log')
     parser.add_argument('--model_name', type=str, default='tmp')
@@ -243,16 +243,16 @@ def main():
     prefix = 'densenet_' + str(batch_size)
 
     # Load data
-    # train_loader, test_loader = getTrainingTestingData(batch_size=batch_size, num_workers=args.num_workers,
-    #                                                    is_224=args.use_224)
-    # test_iter = iter(test_loader)
+    train_loader, test_loader = getTrainingTestingData(batch_size=batch_size, num_workers=args.num_workers,
+                                                       is_224=args.use_224)
+    test_iter = iter(test_loader)
     # print(test_iter)
 
     # Load data folder not the zip file
-    print("If dataset need transform:", args.use_224)
-    train_loader, test_loader = getTrainingTestData_unzip(batch_size=batch_size, num_workers=args.num_workers,
-                                                            is_224=args.use_224)
-    test_iter = iter(test_loader)
+    # print("If dataset need transform:", args.use_224)
+    # train_loader, test_loader = getTrainingTestData_unzip(batch_size=batch_size, num_workers=args.num_workers,
+    #                                                         is_224=args.use_224)
+    # test_iter = iter(test_loader)
     
     writers = {}
     for mode in ["train", "val"]:
