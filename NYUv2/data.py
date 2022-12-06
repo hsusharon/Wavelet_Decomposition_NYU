@@ -14,6 +14,7 @@ from PIL import Image
 from io import BytesIO
 import random
 import csv
+import matplotlib.pyplot as plt
 
 
 
@@ -114,7 +115,12 @@ class depthDatasetMemory(Dataset):
         depth = Image.open( BytesIO(self.data[sample[1]]) )
         sample = {'image': image, 'depth': depth}
         # print("image size:", image, "depth size:",depth)
+        print("transform:", self.transform)
         if self.transform: sample = self.transform(sample)
+
+        plt.figure()
+        plt.imshow(sample['image'])
+        plt.show()
         return sample
 
     def __len__(self):
@@ -236,16 +242,16 @@ def getTrainingTestingData(batch_size, num_workers=8, is_224=False):
 
     transformed_training = depthDatasetMemory(data, nyu2_train, transform=getDefaultTrainTransform(is_224=is_224))
     transformed_testing = depthDatasetMemory(data, nyu2_train, transform=getNoTransform(is_224=is_224))
-    # training_data = []
-    # testing_data = []
-    # for i in range(1): #2
-    #     training_data.append(transformed_training.unzip_data(i))
-    #     testing_data.append(transformed_testing.unzip_data(i+3000))
-    #     if i%150 == 0:
-    #         print("Processing until image:", i)
+    training_data = []
+    testing_data = []
+    for i in range(30000): #2
+        training_data.append(transformed_training.unzip_data(i))
+        testing_data.append(transformed_testing.unzip_data(i+3000))
+        if i%150 == 0:
+            print("Processing until image:", i)
     # print("Training data size:", len(training_data), len(testing_data))
-    train_dataloader = DataLoader(transformed_training, batch_size, shuffle=True, num_workers=num_workers)
-    test_dataloader = DataLoader(transformed_testing, batch_size, shuffle=False, num_workers=num_workers)
+    train_dataloader = DataLoader(training_data, batch_size, shuffle=True, num_workers=num_workers)
+    test_dataloader = DataLoader(testing_data, batch_size, shuffle=False, num_workers=num_workers)
     
     
     return train_dataloader, test_dataloader
