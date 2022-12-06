@@ -254,9 +254,9 @@ def main():
     #                                                         is_224=args.use_224)
     # test_iter = iter(test_loader)
     
-    writers = {}
-    for mode in ["train", "val"]:
-        writers[mode] = SummaryWriter(os.path.join(logpath, mode))
+    # writers = {}
+    # for mode in ["train", "val"]:
+    #     writers[mode] = SummaryWriter(os.path.join(logpath, mode))
     # Loss
     l1_criterion = nn.L1Loss()
 
